@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genres</title>
+    <link rel="stylesheet" href="{% static 'backend/css/styles.css' %}">
+</head>
+<body>
+    <header>
+        <h1>Music Genres</h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'homepage' %}">Home</a></li>
+                <li><a href="{% url 'aboutus' %}">About Us</a></li>
+                <li><a href="{% url 'drivelist' %}">Drive List</a></li>
+                <li><a href="{% url 'genres' %}">Genres</a></li>
+                <li><a href="{% url 'new_releases' %}">New Releases</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>Explore Different Genres</h2>
+        <section>
+            <h3>Popular Genres</h3>
+            <ul>
+                <li>Pop</li>
+                <li>Rock</li>
+                <li>Hip-Hop</li>
+                <li>Jazz</li>
+                <li>Classical</li>
+                <li>Electronic</li>
+                <li>Reggae</li>
+                <li>Country</li>
+            </ul>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Firepy. All rights reserved.</p>
+    </footer>
+</body>
+</html>

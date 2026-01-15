@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Firepy</title>
+    <link rel="stylesheet" href="{% static 'backend/css/styles.css' %}">
+</head>
+<body>
+    <header>
+        <h1>About us</h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'homepage' %}">Home</a></li>
+                <li><a href="{% url 'aboutus' %}">About Us</a></li>
+                <li><a href="{% url 'drivelist' %}">Drive List</a></li>
+                <li><a href="{% url 'genres' %}">Genres</a></li>
+                <li><a href="{% url 'new_releases' %}">New Releases</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Welcome to Firepy</h2>
+            <p>Firepy is your go-to platform for discovering the latest and greatest in music. We are dedicated to bringing you the best tracks across various genres.</p>
+            <p>Our team is passionate about music and strives to provide an exceptional experience for our users.</p>
+        </section>
+        <section>
+            <h2>Our Mission</h2>
+            <p>To connect music lovers with the sounds they crave and to support artists in sharing their work with the world.</p>
+        </section>
+        <section>
+            <h2>Contact Us</h2>
+            <p>If you have any questions or feedback, feel free to reach out to us at <a href="mailto:info@firepy.com">info@firepy.com</a>.</p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Firepy. All rights reserved.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhajan</title>
+    <link rel="stylesheet" href="{% static 'backend/css/styles.css' %}">
+</head>
+<body>
+    <header>
+        <h1>Bhajan</h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'homepage' %}">Home</a></li>
+                <li><a href="{% url 'aboutus' %}">About Us</a></li>
+                <li><a href="{% url 'drivelist' %}">Drive List</a></li>
+                <li><a href="{% url 'genres' %}">Genres</a></li>
+                <li><a href="{% url 'new_releases' %}">New Releases</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Welcome to the Bhajan Page</h2>
+            <p>Here you can find a collection of beautiful bhajans.</p>
+            <!-- Add more content related to bhajans here -->
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Firepy. All rights reserved.</p>
+    </footer>
+</body>
+</html>

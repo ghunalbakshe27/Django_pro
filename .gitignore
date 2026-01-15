@@ -1,0 +1,26 @@
+# 🔒 Environment variables
+.env
+.env.*
+
+# 🐍 Python
+_pycache_/
+*.py[cod]
+*.log
+
+# 🌍 Virtual environment
+venv/
+env/
+
+# 🧠 Editor configs
+.vscode/
+.idea/
+
+# 🗄️ Django
+db.sqlite3
+
+# 🎵 Media files
+media/
+
+# 💻 OS files
+.DS_Store
+Thumbs.db
