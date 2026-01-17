@@ -124,8 +124,8 @@ def topeng(request):
     return render(request, 'backend/topeng.html')
 
 @login_required(login_url='user_login')
-def trend(request):
-    return render(request, 'backend/trend.html')
+def romantic_vibes(request):
+    return render(request, 'backend/romantic_vibes.html')
 
 
 @csrf_protect

@@ -1,30 +1,316 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top English</title>
-    <link rel="stylesheet" href="{% static 'backend/css/styles.css' %}">
+    <title>English - Firepy</title>
+    <link rel="stylesheet" href="{% static 'backend/css/topeng.css' %}">
+    <link rel="shortcut icon" href="{% static 'backend/images/firepy.jpeg' %}" type="image/x-icon">
 </head>
+
 <body>
-    <header>
-        <h1>Top English Songs</h1>
-    </header>
-    <main>
-        <section>
-            <h2>Featured Songs</h2>
-            <ul>
-                <li>Song 1</li>
-                <li>Song 2</li>
-                <li>Song 3</li>
-                <li>Song 4</li>
-                <li>Song 5</li>
-            </ul>
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2023 Firepy. All rights reserved.</p>
-    </footer>
+    <div class="container">
+        <div class="header">
+            <h1>♫ English</h1>
+            <!-- <p>Fresh tracks just for you</p> -->
+            <center>
+                <nav>
+                    <a href="{% url 'homepage' %}">𝐁𝐀𝐂𝐊</a>
+                </nav>
+            </center>
+        </div>
+
+        <div class="music-wrapper">
+            <!-- Playlist Section -->
+            <div class="playlist-section">
+                <h2>Playlist</h2>
+                <div id="playlistContainer">
+                    {% for song in songs %}
+                    <div class="song-item" data-index="{{ forloop.counter0 }}">
+                        <img src="{{ song.cover_image.url }}" alt="{{ song.title }}">
+                        <div class="song-info">
+                            <div class="song-title">{{ song.title }}</div>
+                            <div class="song-artist">{{ song.artist }}</div>
+                        </div>
+                        <div class="song-duration">{{ song.duration }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Player Section -->
+            <div class="player-section">
+                <div class="now-playing">
+                    <h3>⇛ Now Playing</h3>
+                    <div class="album-art" id="albumArt">
+                        <img id="coverImage" src="{% static 'backend/images/default-cover.jpg' %}" alt="Album Cover">
+                    </div>
+                    <div class="track-info">
+                        <div class="track-title" id="trackTitle">Select a song</div>
+                        <div class="track-artist" id="trackArtist">Artist name</div>
+                    </div>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress" id="progress"></div>
+                    </div>
+                    <div class="time-info">
+                        <span id="currentTime">0:00</span>
+                        <span id="totalTime">0:00</span>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="control-btn" id="prevBtn" title="Previous">⏮</button>
+                    <button class="control-btn play-pause" id="playPauseBtn" title="Play">▶</button>
+                    <button class="control-btn" id="nextBtn" title="Next">⏭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" preload="auto"></audio>
+    <script>
+        // Songs data from Django
+        const songsData = {{ songs_json| safe }};
+
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let isUserSeeking = false;
+
+        // DOM Elements
+        const audioPlayer = document.getElementById('audioPlayer');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progress = document.getElementById('progress');
+        const currentTimeEl = document.getElementById('currentTime');
+        const totalTimeEl = document.getElementById('totalTime');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const trackTitle = document.getElementById('trackTitle');
+        const trackArtist = document.getElementById('trackArtist');
+        const coverImage = document.getElementById('coverImage');
+        const albumArt = document.getElementById('albumArt');
+        const songItems = document.querySelectorAll('.song-item');
+
+
+
+        // ========== LOCAL STORAGE FUNCTIONS ==========
+
+        // Save current song state to localStorage
+        function savePlayerState() {
+            const state = {
+                songIndex: currentSongIndex,
+                currentTime: audioPlayer.currentTime,
+                isPlaying: !audioPlayer.paused
+            };
+            localStorage.setItem('musicPlayerState', JSON.stringify(state));
+        }
+
+        // Load saved state from localStorage
+        function loadPlayerState() {
+            const savedState = localStorage.getItem('musicPlayerState');
+            if (savedState) {
+                try {
+                    return JSON.parse(savedState);
+                } catch (e) {
+                    console.log('Error loading saved state:', e);
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        // ========== SONG LOADING ==========
+
+        // Load song - UPDATED VERSION
+        function loadSong(index) {
+            if (songsData.length === 0) return;
+
+            currentSongIndex = index;
+            const song = songsData[index];
+
+            audioPlayer.src = song.audio;
+            trackTitle.textContent = song.title;
+            trackArtist.textContent = song.artist;
+            coverImage.src = song.cover;
+
+            // Save state when song changes
+            savePlayerState();
+
+            // Wait for metadata before allowing seeks
+            audioPlayer.addEventListener('loadedmetadata', function handler() {
+                console.log('Audio loaded, duration:', audioPlayer.duration);
+                audioPlayer.removeEventListener('loadedmetadata', handler);
+            }, { once: true });
+
+            // Update active song in playlist
+            songItems.forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        // ========== PLAYBACK CONTROLS ==========
+
+        // Play song
+        function playSong() {
+            audioPlayer.play();
+            isPlaying = true;
+            playPauseBtn.textContent = '⏸';
+            albumArt.classList.add('playing');
+            savePlayerState();
+        }
+
+        // Pause song
+        function pauseSong() {
+            audioPlayer.pause();
+            isPlaying = false;
+            playPauseBtn.textContent = '▶';
+            albumArt.classList.remove('playing');
+            savePlayerState();
+        }
+
+        // Toggle play/pause
+        playPauseBtn.addEventListener('click', () => {
+            if (songsData.length === 0) return;
+
+            if (!audioPlayer.src || audioPlayer.src === '') {
+                loadSong(0);
+                playSong();
+            } else {
+                isPlaying ? pauseSong() : playSong();
+            }
+        });
+
+        // Previous song
+        prevBtn.addEventListener('click', () => {
+            if (songsData.length === 0) return;
+            currentSongIndex = (currentSongIndex - 1 + songsData.length) % songsData.length;
+            loadSong(currentSongIndex);
+            if (isPlaying) playSong();
+        });
+
+        // Next song
+        nextBtn.addEventListener('click', () => {
+            if (songsData.length === 0) return;
+            currentSongIndex = (currentSongIndex + 1) % songsData.length;
+            loadSong(currentSongIndex);
+            if (isPlaying) playSong();
+        });
+
+        // ========== PROGRESS BAR / SEEKING ==========
+
+        progressBar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+
+            if (!audioPlayer.duration || isNaN(audioPlayer.duration) || audioPlayer.duration === 0) {
+                return;
+            }
+
+            const rect = progressBar.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const width = rect.width;
+            const newTime = (clickX / width) * audioPlayer.duration;
+
+            isUserSeeking = true;
+            audioPlayer.currentTime = newTime;
+
+            setTimeout(() => {
+                isUserSeeking = false;
+                savePlayerState();
+            }, 100);
+        });
+
+        // ========== PROGRESS UPDATE ==========
+
+        // Update progress bar - DON'T UPDATE WHILE USER IS SEEKING
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (isUserSeeking) return;
+
+            const { currentTime, duration } = audioPlayer;
+
+            if (duration && !isNaN(duration) && duration > 0) {
+                const progressPercent = (currentTime / duration) * 100;
+                progress.style.width = `${progressPercent}%`;
+
+                currentTimeEl.textContent = formatTime(currentTime);
+                totalTimeEl.textContent = formatTime(duration);
+
+                // Save state every 2 seconds
+                if (Math.floor(currentTime) % 2 === 0) {
+                    savePlayerState();
+                }
+            }
+        });
+
+
+
+        // ========== AUTO NEXT ==========
+
+        // Song ended - play next
+        audioPlayer.addEventListener('ended', () => {
+            currentSongIndex = (currentSongIndex + 1) % songsData.length;
+            loadSong(currentSongIndex);
+            playSong();
+        });
+
+        // ========== PLAYLIST INTERACTION ==========
+
+        // Playlist item click
+        songItems.forEach((item) => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.getAttribute('data-index'));
+                loadSong(index);
+                playSong();
+            });
+        });
+
+        // ========== HELPER FUNCTIONS ==========
+
+        // Format time helper
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // ========== INITIALIZATION ==========
+
+        // Load saved state or first song on page load
+        if (songsData.length > 0) {
+            const savedState = loadPlayerState();
+
+            if (savedState && savedState.songIndex >= 0 && savedState.songIndex < songsData.length) {
+                // Restore saved song
+                console.log('Restoring saved state:', savedState);
+                loadSong(savedState.songIndex);
+
+                // Wait for audio to load, then restore time and play state
+                audioPlayer.addEventListener('loadedmetadata', function handler() {
+                    audioPlayer.removeEventListener('loadedmetadata', handler);
+
+                    // Restore playback position
+                    if (savedState.currentTime && savedState.currentTime > 0) {
+                        audioPlayer.currentTime = savedState.currentTime;
+                    }
+                }, { once: true });
+            } else {
+                // No saved state, load first song
+                loadSong(0);
+            }
+        }
+    </script>
 </body>
+
 </html>

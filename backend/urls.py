@@ -28,7 +28,7 @@ urlpatterns = [
     path('subh1/', views.subh1, name='subh1'),
     path('top/', views.top, name='top'),
     path('topeng/', views.topeng, name='topeng'),
-    path('trend/', views.trend, name='trend'),
+    path('romantic_vibes/', views.romantic_vibes, name='romantic_vibes'),
 
     
 
