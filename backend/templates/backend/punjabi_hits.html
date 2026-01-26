@@ -1,0 +1,479 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punjabi Hits - Firepy</title>
+    <link rel="shortcut icon" href="{% static 'backend/images/firepy.jpeg' %}" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'backend/css/punjabi.css' %}">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>♫ Punjabi Hits</h1>
+            <center>
+                <nav>
+                    <a href="{% url 'homepage' %}">𝐁𝐀𝐂𝐊</a>
+                </nav>
+            </center>
+        </div>
+
+        <div class="music-wrapper">
+            <!-- Playlist Section -->
+            <div class="playlist-section">
+                <h2>Playlist</h2>
+                <div id="playlistContainer">
+                    {% for song in songs %}
+                    <div class="song-item" data-index="{{ forloop.counter0 }}">
+                        <img src="{{ song.cover_image.url }}" alt="{{ song.title }}">
+                        <div class="song-info">
+                            <div class="song-title">{{ song.title }}</div>
+                            <div class="song-artist">{{ song.artist }}</div>
+                        </div>
+                        <div class="song-duration">
+                            <span class="duration-text">{{ song.duration }}</span>
+                            <div class="equalizer">
+                                <span class="bar"></span>
+                                <span class="bar"></span>
+                                <span class="bar"></span>
+                                <span class="bar"></span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Player Section -->
+            <div class="player-section">
+                <div class="now-playing">
+                    <h3>⇛ Now Playing</h3>
+                    <div class="album-art" id="albumArt">
+                        <img id="coverImage" src="{% static 'backend/images/default-cover.jpg' %}" alt="Album Cover">
+                    </div>
+                    <div class="track-info">
+                        <div class="track-title" id="trackTitle">Select a song</div>
+                        <div class="track-artist" id="trackArtist">Artist name</div>
+                    </div>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress" id="progress"></div>
+                    </div>
+                    <div class="time-info">
+                        <span id="currentTime">0:00</span>
+                        <span id="totalTime">0:00</span>
+                    </div>
+                    <div class="note progress-note">
+                        ⚠️ <strong>Note:</strong> Until the song finishes playing completely, the progress bar may
+                        reset, so don't touch it if the song has not been played fully yet.
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="control-btn" id="prevBtn" title="Previous">⏮</button>
+                    <button class="control-btn play-pause" id="playPauseBtn" title="Play">▶</button>
+                    <button class="control-btn" id="nextBtn" title="Next">⏭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" preload="auto"></audio>
+    <script>
+        // Songs data from Django
+        const songsData = {{ songs_json| safe }};
+
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let isUserSeeking = false;
+
+        // DOM Elements
+        const audioPlayer = document.getElementById('audioPlayer');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progress = document.getElementById('progress');
+        const currentTimeEl = document.getElementById('currentTime');
+        const totalTimeEl = document.getElementById('totalTime');
+        const trackTitle = document.getElementById('trackTitle');
+        const trackArtist = document.getElementById('trackArtist');
+        const coverImage = document.getElementById('coverImage');
+        const albumArt = document.getElementById('albumArt');
+        const songItems = document.querySelectorAll('.song-item');
+
+        // 🔥 NEW: Like Button Elements
+        const mainLikeBtn = document.getElementById('likeBtn');
+        const smallLikeBtns = document.querySelectorAll('.like-btn-small');
+
+
+        // ========== 🔥 NEW: CSRF TOKEN FUNCTION ==========
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+
+        // ========== 🔥 NEW: TRACK SONG PLAY FUNCTION ==========
+        async function trackSongPlay(songId) {
+            try {
+                const response = await fetch(`/api/track-play/${songId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                const data = await response.json();
+                console.log('✅ Song play tracked:', data);
+            } catch (error) {
+                console.error('❌ Error tracking song play:', error);
+            }
+        }
+
+
+        // ========== 🔥 NEW: LIKE FUNCTIONS ==========
+        async function toggleLike(songId) {
+            try {
+                const response = await fetch(`/api/like-song/${songId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                const data = await response.json();
+
+                if (data.status === 'liked') {
+                    updateLikeUI(songId, true);
+                } else if (data.status === 'unliked') {
+                    updateLikeUI(songId, false);
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Error toggling like:', error);
+            }
+        }
+
+        function updateLikeUI(songId, isLiked) {
+            // Update main like button
+            if (songsData[currentSongIndex] && songsData[currentSongIndex].id == songId) {
+                if (isLiked) {
+                    mainLikeBtn.classList.add('liked');
+                } else {
+                    mainLikeBtn.classList.remove('liked');
+                }
+            }
+
+            // Update playlist like button
+            const playlistBtn = document.querySelector(`.like-btn-small[data-song-id="${songId}"]`);
+            if (playlistBtn) {
+                if (isLiked) {
+                    playlistBtn.classList.add('liked');
+                } else {
+                    playlistBtn.classList.remove('liked');
+                }
+            }
+        }
+
+        async function checkLikeStatus(songId) {
+            try {
+                const response = await fetch('/api/liked-songs/');
+                const data = await response.json();
+                const likedSongIds = data.songs.map(s => s.id);
+                return likedSongIds.includes(songId);
+            } catch (error) {
+                console.error('Error checking like status:', error);
+                return false;
+            }
+        }
+
+
+        // ========== LOCAL STORAGE FUNCTIONS ==========
+
+        function savePlayerState() {
+            const state = {
+                songIndex: currentSongIndex,
+                currentTime: audioPlayer.currentTime,
+                isPlaying: !audioPlayer.paused
+            };
+            localStorage.setItem('musicPlayerState', JSON.stringify(state));
+        }
+
+        function loadPlayerState() {
+            const savedState = localStorage.getItem('musicPlayerState');
+            if (savedState) {
+                try {
+                    return JSON.parse(savedState);
+                } catch (e) {
+                    console.log('Error loading saved state:', e);
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        // ========== EQUALIZER UPDATE FUNCTION ==========
+        function updateEqualizerDisplay() {
+            songItems.forEach((item, i) => {
+                if (i === currentSongIndex && isPlaying) {
+                    item.classList.add('playing');
+                } else {
+                    item.classList.remove('playing');
+                }
+            });
+        }
+
+        // ========== SONG LOADING - 🔥 ENHANCED ==========
+
+        async function loadSong(index) {
+            if (songsData.length === 0) return;
+
+            currentSongIndex = index;
+            const song = songsData[index];
+
+            audioPlayer.src = song.audio;
+            trackTitle.textContent = song.title;
+            trackArtist.textContent = song.artist;
+            coverImage.src = song.cover;
+
+            // 🔥 NEW: Check like status for current song
+            const isLiked = await checkLikeStatus(song.id);
+            if (mainLikeBtn) {
+                if (isLiked) {
+                    mainLikeBtn.classList.add('liked');
+                } else {
+                    mainLikeBtn.classList.remove('liked');
+                }
+            }
+
+            savePlayerState();
+
+            audioPlayer.addEventListener('loadedmetadata', function handler() {
+                console.log('Audio loaded, duration:', audioPlayer.duration);
+                audioPlayer.removeEventListener('loadedmetadata', handler);
+            }, { once: true });
+
+            // Update active song in playlist
+            songItems.forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Update equalizer
+            updateEqualizerDisplay();
+        }
+
+        // ========== PLAYBACK CONTROLS - 🔥 ENHANCED ==========
+
+        function playSong() {
+            audioPlayer.play();
+            isPlaying = true;
+            playPauseBtn.textContent = '⏸';
+            albumArt.classList.add('playing');
+            updateEqualizerDisplay();
+            savePlayerState();
+
+            // 🔥 NEW: Track song play for recent history
+            if (songsData[currentSongIndex]) {
+                trackSongPlay(songsData[currentSongIndex].id);
+            }
+        }
+
+        function pauseSong() {
+            audioPlayer.pause();
+            isPlaying = false;
+            playPauseBtn.textContent = '▶';
+            albumArt.classList.remove('playing');
+            updateEqualizerDisplay();
+            savePlayerState();
+        }
+
+        playPauseBtn.addEventListener('click', () => {
+            if (songsData.length === 0) return;
+
+            if (!audioPlayer.src || audioPlayer.src === '') {
+                loadSong(0);
+                playSong();
+            } else {
+                isPlaying ? pauseSong() : playSong();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (songsData.length === 0) return;
+            currentSongIndex = (currentSongIndex - 1 + songsData.length) % songsData.length;
+            loadSong(currentSongIndex);
+            if (isPlaying) playSong();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (songsData.length === 0) return;
+            currentSongIndex = (currentSongIndex + 1) % songsData.length;
+            loadSong(currentSongIndex);
+            if (isPlaying) playSong();
+        });
+
+        // ========== PROGRESS BAR / SEEKING ==========
+
+        progressBar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+
+            if (!audioPlayer.duration || isNaN(audioPlayer.duration) || audioPlayer.duration === 0) {
+                return;
+            }
+
+            const rect = progressBar.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const width = rect.width;
+            const newTime = (clickX / width) * audioPlayer.duration;
+
+            isUserSeeking = true;
+            audioPlayer.currentTime = newTime;
+
+            setTimeout(() => {
+                isUserSeeking = false;
+                savePlayerState();
+            }, 100);
+        });
+
+        // ========== PROGRESS UPDATE ==========
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (isUserSeeking) return;
+
+            const { currentTime, duration } = audioPlayer;
+
+            if (duration && !isNaN(duration) && duration > 0) {
+                const progressPercent = (currentTime / duration) * 100;
+                progress.style.width = `${progressPercent}%`;
+
+                currentTimeEl.textContent = formatTime(currentTime);
+                totalTimeEl.textContent = formatTime(duration);
+
+                if (Math.floor(currentTime) % 2 === 0) {
+                    savePlayerState();
+                }
+            }
+        });
+
+        // ========== AUTO NEXT ==========
+
+        audioPlayer.addEventListener('ended', () => {
+            currentSongIndex = (currentSongIndex + 1) % songsData.length;
+            loadSong(currentSongIndex);
+            playSong();
+        });
+
+        // ========== PLAYLIST INTERACTION ==========
+
+        songItems.forEach((item) => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.getAttribute('data-index'));
+                loadSong(index);
+                playSong();
+            });
+        });
+
+
+        // ========== 🔥 NEW: LIKE BUTTON EVENT LISTENERS ==========
+
+        // Main like button click
+        if (mainLikeBtn) {
+            mainLikeBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (songsData.length === 0 || !songsData[currentSongIndex]) return;
+
+                const songId = songsData[currentSongIndex].id;
+                await toggleLike(songId);
+
+                // Animation
+                mainLikeBtn.classList.add('beat');
+                setTimeout(() => mainLikeBtn.classList.remove('beat'), 300);
+            });
+        }
+
+        // Playlist like buttons click
+        smallLikeBtns.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const songId = btn.getAttribute('data-song-id');
+                await toggleLike(songId);
+
+                // Animation
+                btn.classList.add('beat');
+                setTimeout(() => btn.classList.remove('beat'), 300);
+            });
+        });
+
+
+        // ========== HELPER FUNCTIONS ==========
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // ========== INITIALIZATION - 🔥 ENHANCED ==========
+
+        if (songsData.length > 0) {
+            const savedState = loadPlayerState();
+
+            if (savedState && savedState.songIndex >= 0 && savedState.songIndex < songsData.length) {
+                console.log('Restoring saved state:', savedState);
+                loadSong(savedState.songIndex);
+
+                audioPlayer.addEventListener('loadedmetadata', function handler() {
+                    audioPlayer.removeEventListener('loadedmetadata', handler);
+
+                    if (savedState.currentTime && savedState.currentTime > 0) {
+                        audioPlayer.currentTime = savedState.currentTime;
+                    }
+                }, { once: true });
+            } else {
+                loadSong(0);
+            }
+
+            // 🔥 NEW: Load like status for all songs on page load
+            fetch('/api/liked-songs/')
+                .then(res => res.json())
+                .then(data => {
+                    const likedSongIds = data.songs.map(s => s.id);
+
+                    // Update all playlist like buttons
+                    smallLikeBtns.forEach(btn => {
+                        const songId = parseInt(btn.getAttribute('data-song-id'));
+                        if (likedSongIds.includes(songId)) {
+                            btn.classList.add('liked');
+                        }
+                    });
+                })
+                .catch(error => console.error('Error loading liked songs:', error));
+        }
+    </script>
+</body>
+
+</html>

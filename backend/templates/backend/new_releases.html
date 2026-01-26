@@ -1,0 +1,397 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Releases - Music Player</title>
+    <link rel="stylesheet" href="{% static 'backend/css/new_releases.css' %}">
+    <link rel="shortcut icon" href="{% static 'backend/images/firepy.jpeg' %}" type="image/x-icon">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>♫ New Releases</h1>
+            <center>
+                <nav>
+                    <a href="{% url 'homepage' %}">𝐁𝐀𝐂𝐊</a>
+                </nav>
+            </center>
+        </div>
+
+        <div class="music-wrapper">
+            <!-- Playlist Section -->
+            <div class="playlist-section">
+                <h2>Playlist</h2>
+                <div id="playlistContainer">
+                    {% for song in songs %}
+                    <div class="song-item" data-index="{{ forloop.counter0 }}" data-song-id="{{ song.id }}">
+                        <img src="{{ song.cover_image.url }}" alt="{{ song.title }}">
+                        <div class="song-info">
+                            <div class="song-title">{{ song.title }}</div>
+                            <div class="song-artist">{{ song.artist }}</div>
+                        </div>
+                        <div class="song-duration">
+                            <span class="duration-text">{{ song.duration }}</span>
+                            <!-- Playing Animation -->
+                            <div class="equalizer">
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Player Section -->
+            <div class="player-section">
+                <div class="now-playing">
+                    <h3>⇛ Now Playing</h3>
+                    <div class="album-art" id="albumArt">
+                        <img id="coverImage" src="{% static 'backend/images/default-cover.jpg' %}" alt="Album Cover">
+                    </div>
+                    <div class="track-info">
+                        <div class="track-header">
+                            <div class="track-title" id="trackTitle">Select a song</div>
+                            <!-- 🔥 Heart Button Next to Title -->
+                            <button class="heart-like-btn" id="likeBtn" title="Like this song">
+                                <svg class="heart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="track-artist" id="trackArtist">Artist name</div>
+                    </div>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress" id="progress"></div>
+                    </div>
+                    <div class="time-info">
+                        <span id="currentTime">0:00</span>
+                        <span id="totalTime">0:00</span>
+                    </div>
+                    <div class="note progress-note">
+                        ⚠️ <strong>Note:</strong> Until the song finishes playing completely, the progress bar may
+                        reset, so don't touch it if the song has not been played fully yet.
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="control-btn" id="prevBtn" title="Previous">⏮</button>
+                    <button class="control-btn play-pause" id="playPauseBtn" title="Play">▶</button>
+                    <button class="control-btn" id="nextBtn" title="Next">⏭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" preload="auto"></audio>
+    <script>
+        const songsData = {{ songs_json| safe }};
+
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let isUserSeeking = false;
+
+        const audioPlayer = document.getElementById('audioPlayer');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progress = document.getElementById('progress');
+        const currentTimeEl = document.getElementById('currentTime');
+        const totalTimeEl = document.getElementById('totalTime');
+        const trackTitle = document.getElementById('trackTitle');
+        const trackArtist = document.getElementById('trackArtist');
+        const coverImage = document.getElementById('coverImage');
+        const albumArt = document.getElementById('albumArt');
+        const songItems = document.querySelectorAll('.song-item');
+        const likeBtn = document.getElementById('likeBtn');
+
+        function savePlayerState() {
+            const state = {
+                songIndex: currentSongIndex,
+                currentTime: audioPlayer.currentTime,
+                isPlaying: !audioPlayer.paused
+            };
+            localStorage.setItem('musicPlayerState', JSON.stringify(state));
+        }
+
+        function loadPlayerState() {
+            const savedState = localStorage.getItem('musicPlayerState');
+            if (savedState) {
+                try {
+                    return JSON.parse(savedState);
+                } catch (e) {
+                    console.log('Error loading saved state:', e);
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        // 🔥 Update equalizer display
+        function updateEqualizerDisplay() {
+            songItems.forEach((item, i) => {
+                if (i === currentSongIndex && isPlaying) {
+                    item.classList.add('playing');
+                } else {
+                    item.classList.remove('playing');
+                }
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function toggleLike(songId) {
+            try {
+                const response = await fetch(`/api/like-song/${songId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                const data = await response.json();
+
+                if (data.status === 'liked') {
+                    likeBtn.classList.add('liked');
+                    console.log('✅ Song liked!');
+                } else if (data.status === 'unliked') {
+                    likeBtn.classList.remove('liked');
+                    console.log('💔 Song unliked!');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Error toggling like:', error);
+            }
+        }
+
+        async function checkLikeStatus(songId) {
+            try {
+                const response = await fetch('/api/liked-songs/');
+                const data = await response.json();
+                const likedSongIds = data.songs.map(s => s.id);
+                return likedSongIds.includes(songId);
+            } catch (error) {
+                console.error('Error checking like status:', error);
+                return false;
+            }
+        }
+
+        likeBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (songsData.length === 0 || !songsData[currentSongIndex]) return;
+
+            const songId = songsData[currentSongIndex].id;
+            await toggleLike(songId);
+
+            likeBtn.classList.add('beat');
+            setTimeout(() => likeBtn.classList.remove('beat'), 600);
+        });
+
+        async function trackSongPlay(songId) {
+            try {
+                const response = await fetch(`/api/track-play/${songId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                const data = await response.json();
+                console.log('✅ Song play tracked:', data);
+            } catch (error) {
+                console.error('Error tracking song play:', error);
+            }
+        }
+
+        async function loadSong(index) {
+            if (songsData.length === 0) return;
+
+            currentSongIndex = index;
+            const song = songsData[index];
+
+            audioPlayer.src = song.audio;
+            trackTitle.textContent = song.title;
+            trackArtist.textContent = song.artist;
+            coverImage.src = song.cover;
+
+            const isLiked = await checkLikeStatus(song.id);
+            if (isLiked) {
+                likeBtn.classList.add('liked');
+            } else {
+                likeBtn.classList.remove('liked');
+            }
+
+            savePlayerState();
+
+            audioPlayer.addEventListener('loadedmetadata', function handler() {
+                console.log('Audio loaded, duration:', audioPlayer.duration);
+                audioPlayer.removeEventListener('loadedmetadata', handler);
+            }, { once: true });
+
+            songItems.forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            updateEqualizerDisplay();
+        }
+
+        function playSong() {
+            audioPlayer.play();
+            isPlaying = true;
+            playPauseBtn.textContent = '⏸';
+            albumArt.classList.add('playing');
+            updateEqualizerDisplay();
+            savePlayerState();
+
+            if (songsData[currentSongIndex]) {
+                trackSongPlay(songsData[currentSongIndex].id);
+            }
+        }
+
+        function pauseSong() {
+            audioPlayer.pause();
+            isPlaying = false;
+            playPauseBtn.textContent = '▶';
+            albumArt.classList.remove('playing');
+            updateEqualizerDisplay();
+            savePlayerState();
+        }
+
+        playPauseBtn.addEventListener('click', () => {
+            if (songsData.length === 0) return;
+
+            if (!audioPlayer.src || audioPlayer.src === '') {
+                loadSong(0);
+                playSong();
+            } else {
+                isPlaying ? pauseSong() : playSong();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (songsData.length === 0) return;
+            currentSongIndex = (currentSongIndex - 1 + songsData.length) % songsData.length;
+            loadSong(currentSongIndex);
+            if (isPlaying) playSong();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (songsData.length === 0) return;
+            currentSongIndex = (currentSongIndex + 1) % songsData.length;
+            loadSong(currentSongIndex);
+            if (isPlaying) playSong();
+        });
+
+        progressBar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+
+            if (!audioPlayer.duration || isNaN(audioPlayer.duration) || audioPlayer.duration === 0) {
+                return;
+            }
+
+            const rect = progressBar.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const width = rect.width;
+            const newTime = (clickX / width) * audioPlayer.duration;
+
+            isUserSeeking = true;
+            audioPlayer.currentTime = newTime;
+
+            setTimeout(() => {
+                isUserSeeking = false;
+                savePlayerState();
+            }, 100);
+        });
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (isUserSeeking) return;
+
+            const { currentTime, duration } = audioPlayer;
+
+            if (duration && !isNaN(duration) && duration > 0) {
+                const progressPercent = (currentTime / duration) * 100;
+                progress.style.width = `${progressPercent}%`;
+
+                currentTimeEl.textContent = formatTime(currentTime);
+                totalTimeEl.textContent = formatTime(duration);
+
+                if (Math.floor(currentTime) % 2 === 0) {
+                    savePlayerState();
+                }
+            }
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            currentSongIndex = (currentSongIndex + 1) % songsData.length;
+            loadSong(currentSongIndex);
+            playSong();
+        });
+
+        songItems.forEach((item) => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.getAttribute('data-index'));
+                loadSong(index);
+                playSong();
+            });
+        });
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        if (songsData.length > 0) {
+            const savedState = loadPlayerState();
+
+            if (savedState && savedState.songIndex >= 0 && savedState.songIndex < songsData.length) {
+                console.log('Restoring saved state:', savedState);
+                loadSong(savedState.songIndex);
+
+                audioPlayer.addEventListener('loadedmetadata', function handler() {
+                    audioPlayer.removeEventListener('loadedmetadata', handler);
+
+                    if (savedState.currentTime && savedState.currentTime > 0) {
+                        audioPlayer.currentTime = savedState.currentTime;
+                    }
+                }, { once: true });
+            } else {
+                loadSong(0);
+            }
+        }
+    </script>
+</body>
+
+</html>

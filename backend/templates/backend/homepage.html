@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F I R E P Y - Home</title>
+    <link rel="stylesheet" href="{% static 'backend/css/homepage.css' %}">
+    <link rel="shortcut icon" href="{% static 'backend/images/firepy.jpeg' %}" type="image/x-icon">
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">
+            <img src="{% static 'backend/images/firepy.jpeg' %}" alt="FIREPY Logo">
+        </div>
+
+        <h1>F I R E P Y</h1>
+
+        <div class="space-section"></div>
+
+        <nav>
+            <a href="{% url 'new_releases' %}">New Releases</a>
+            <a href="{% url 'aboutus' %}">About Us</a>
+        </nav>
+
+        <button class="account-btn" id="accountBtn">
+            <div class="user-avatar">
+                <div class="user-head"></div>
+                <div class="user-body"></div>
+            </div>
+        </button>
+    </header>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Account Sidebar -->
+    <div class="account-sidebar" id="accountSidebar">
+        <div class="sidebar-header">
+            <button class="close-btn" id="closeSidebar">×</button>
+            <div class="sidebar-avatar">
+                <div class="user-avatar">
+                    <div class="user-head"></div>
+                    <div class="user-body"></div>
+                </div>
+            </div>
+            <div class="sidebar-username">{{ username }}</div>
+            <div class="sidebar-email">{{ email }}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="sidebar-menu">
+            <div class="menu-item" id="personalDetails">
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 20c0-4 3-6 8-6s8 2 8 6" />
+                    </svg>
+                </span>
+                <span>Personal Details</span>
+            </div>
+            <div class="menu-item" id="recentHistory">
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 6v6l4 2" />
+                    </svg>
+                </span>
+                <span>Recent History</span>
+            </div>
+            <div class="menu-item" id="likedSongs">
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
+                </span>
+                <span>Liked Songs</span>
+            </div>
+            <div class="menu-item" id="logout">
+                <nav><a href="{% url 'user_logout' %}" class="ancor">Log Out</a></nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 Modal for Personal Details -->
+    <div class="modal" id="personalModal">
+        <div class="modal-content">
+            <span class="modal-close" id="closePersonalModal">&times;</span>
+            <h2>Personal Details</h2>
+            <div class="modal-body" id="personalDetailsContent">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 Modal for Recent History -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content modal-large">
+            <span class="modal-close" id="closeHistoryModal">&times;</span>
+            <h2>Recent History</h2>
+            <div class="modal-body" id="historyContent">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 Modal for Liked Songs -->
+    <div class="modal" id="likedModal">
+        <div class="modal-content modal-large">
+            <span class="modal-close" id="closeLikedModal">&times;</span>
+            <h2>Liked Songs</h2>
+            <div class="modal-body" id="likedContent">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Featured Section -->
+        <div class="section">
+            <h2>PlayList-1</h2>
+            <div class="grid">
+                <div class="grid-item">
+                    <a href="{% url 'top' %}"><img src="{% static 'backend/images/top hits.jpeg' %}"
+                            alt="Album Cover"></a>
+                    <h3>Top Hits</h3>
+                </div>
+                <div class="grid-item">
+                    <a href="{% url 'drivelist' %}"><img src="{% static 'backend/images/drive.jpeg' %}"
+                            alt="Album Cover"></a>
+                    <h3>Driving playlist</h3>
+                </div>
+                <div class="grid-item">
+                    <a href="{% url 'mixlist' %}"><img src="{% static 'backend/images/mixlist.jpg' %}"
+                            alt="Album Cover"></a>
+                    <h3>MIX PLAYLIST</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- List Section -->
+        <div class="section">
+            <h2>PlayList-2</h2>
+            <div class="grid">
+                <div class="grid-item">
+                    <a href="{% url 'romantic_vibes' %}"><img src="{% static 'backend/images/romantic_vibes.jfif' %}"
+                            alt="Album Cover"></a>
+                    <h3>Romantic vibes</h3>
+                </div>
+                <div class="grid-item">
+                    <a href="{% url 'bhajan' %}"><img src="{% static 'backend/images/bhajan.jpeg' %}"
+                            alt="Album Cover"></a>
+                    <h3>Bhakti Bhajan</h3>
+                </div>
+                <div class="grid-item">
+                    <a href="{% url 'punjabi_hits' %}"><img src="{% static 'backend/images/punjabi.jpeg' %}"
+                            alt="Album Cover"></a>
+                    <h3>Punjabi Hits</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Artists Section -->
+        <div class="section">
+            <h2>Artists</h2>
+            <div class="grid">
+                <div class="grid-item">
+                    <a href="{% url 'arjit' %}"><img src="{% static 'backend/images/arjitp.jpeg' %}"
+                            alt="Album Cover"></a>
+                    <h3>Artist - Arjit Singh</h3>
+                </div>
+                <div class="grid-item">
+                    <a href="{% url 'honeys' %}"><img src="{% static 'backend/images/Honey Singh.jpg' %}"
+                            alt="Album Cover"></a>
+                    <h3>Artist - Honey singh</h3>
+                </div>
+                <div class="grid-item">
+                    <a href="{% url 'subh1' %}"><img src="{% static 'backend/images/subh.jpg' %}" alt="Album Cover"></a>
+                    <h3>Artist - Subh</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Charts Section -->
+        <div class="section">
+            <h2>Top Charts</h2>
+            <div class="grid">
+                <div class="grid-item">
+                    <a href="{% url 'topeng' %}"><img src="{% static 'backend/images/images.jpeg' %}"
+                            alt="Album Cover"></a>
+                    <h3>Top English Songs</h3>
+                </div>
+                <div class="grid-item">
+                    <a href="{% url 'indianhits' %}"><img src="{% static 'backend/images/indianhit.jpeg' %}"
+                            alt="Album Cover"></a>
+                    <h3>Top Indian Songs</h3>
+                </div>
+                <div class="grid-item">
+                    <a href="{% url 'phonk' %}"><img src="{% static 'backend/images/phonk.jpg' %}"
+                            alt="Album Cover"></a>
+                    <h3>Top Phonk</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 F I R E P Y. All Rights Reserved.</p>
+    </footer>
+
+    <script src="{% static 'backend/js/homepage.js' %}"></script>
+</body>
+
+</html>
