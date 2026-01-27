@@ -5,15 +5,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MixPlaylist/Chill - Firepy</title>
+    <title>Mix Playlist - Firepy</title>
+    <link rel="stylesheet" href="{% static 'backend/css/music_player.css' %}">
     <link rel="shortcut icon" href="{% static 'backend/images/firepy.jpeg' %}" type="image/x-icon">
-    <link rel="stylesheet" href="{% static 'backend/css/mixlist.css' %}">
 </head>
 
 <body>
     <div class="container">
         <div class="header">
-            <h1>♫ MixPlaylist/Chill</h1>
+            <h1>♫ Mix Playlist</h1>
             <center>
                 <nav>
                     <a href="{% url 'homepage' %}">𝐁𝐀𝐂𝐊</a>
@@ -27,7 +27,7 @@
                 <h2>Playlist</h2>
                 <div id="playlistContainer">
                     {% for song in songs %}
-                    <div class="song-item" data-index="{{ forloop.counter0 }}">
+                    <div class="song-item" data-index="{{ forloop.counter0 }}" data-song-id="{{ song.id }}">
                         <img src="{{ song.cover_image.url }}" alt="{{ song.title }}">
                         <div class="song-info">
                             <div class="song-title">{{ song.title }}</div>
@@ -35,11 +35,12 @@
                         </div>
                         <div class="song-duration">
                             <span class="duration-text">{{ song.duration }}</span>
+                            <!-- Playing Animation -->
                             <div class="equalizer">
-                                <span class="bar"></span>
-                                <span class="bar"></span>
-                                <span class="bar"></span>
-                                <span class="bar"></span>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
                             </div>
                         </div>
                     </div>
@@ -55,7 +56,16 @@
                         <img id="coverImage" src="{% static 'backend/images/default-cover.jpg' %}" alt="Album Cover">
                     </div>
                     <div class="track-info">
-                        <div class="track-title" id="trackTitle">Select a song</div>
+                        <div class="track-header">
+                            <div class="track-title" id="trackTitle">Select a song</div>
+                            <!-- 🔥 Heart Button Next to Title -->
+                            <button class="heart-like-btn" id="likeBtn" title="Like this song">
+                                <svg class="heart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                </svg>
+                            </button>
+                        </div>
                         <div class="track-artist" id="trackArtist">Artist name</div>
                     </div>
                 </div>
@@ -85,14 +95,12 @@
 
     <audio id="audioPlayer" preload="auto"></audio>
     <script>
-        // Songs data from Django
         const songsData = {{ songs_json| safe }};
 
         let currentSongIndex = 0;
         let isPlaying = false;
         let isUserSeeking = false;
 
-        // DOM Elements
         const audioPlayer = document.getElementById('audioPlayer');
         const playPauseBtn = document.getElementById('playPauseBtn');
         const prevBtn = document.getElementById('prevBtn');
@@ -106,106 +114,7 @@
         const coverImage = document.getElementById('coverImage');
         const albumArt = document.getElementById('albumArt');
         const songItems = document.querySelectorAll('.song-item');
-
-        // 🔥 NEW: Like Button Elements
-        const mainLikeBtn = document.getElementById('likeBtn');
-        const smallLikeBtns = document.querySelectorAll('.like-btn-small');
-
-
-        // ========== 🔥 NEW: CSRF TOKEN FUNCTION ==========
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-
-
-        // ========== 🔥 NEW: TRACK SONG PLAY FUNCTION ==========
-        async function trackSongPlay(songId) {
-            try {
-                const response = await fetch(`/api/track-play/${songId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                });
-                const data = await response.json();
-                console.log('✅ Song play tracked:', data);
-            } catch (error) {
-                console.error('❌ Error tracking song play:', error);
-            }
-        }
-
-
-        // ========== 🔥 NEW: LIKE FUNCTIONS ==========
-        async function toggleLike(songId) {
-            try {
-                const response = await fetch(`/api/like-song/${songId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                });
-                const data = await response.json();
-
-                if (data.status === 'liked') {
-                    updateLikeUI(songId, true);
-                } else if (data.status === 'unliked') {
-                    updateLikeUI(songId, false);
-                }
-
-                return data;
-            } catch (error) {
-                console.error('Error toggling like:', error);
-            }
-        }
-
-        function updateLikeUI(songId, isLiked) {
-            // Update main like button
-            if (songsData[currentSongIndex] && songsData[currentSongIndex].id == songId) {
-                if (isLiked) {
-                    mainLikeBtn.classList.add('liked');
-                } else {
-                    mainLikeBtn.classList.remove('liked');
-                }
-            }
-
-            // Update playlist like button
-            const playlistBtn = document.querySelector(`.like-btn-small[data-song-id="${songId}"]`);
-            if (playlistBtn) {
-                if (isLiked) {
-                    playlistBtn.classList.add('liked');
-                } else {
-                    playlistBtn.classList.remove('liked');
-                }
-            }
-        }
-
-        async function checkLikeStatus(songId) {
-            try {
-                const response = await fetch('/api/liked-songs/');
-                const data = await response.json();
-                const likedSongIds = data.songs.map(s => s.id);
-                return likedSongIds.includes(songId);
-            } catch (error) {
-                console.error('Error checking like status:', error);
-                return false;
-            }
-        }
-
-
-        // ========== LOCAL STORAGE FUNCTIONS ==========
+        const likeBtn = document.getElementById('likeBtn');
 
         function savePlayerState() {
             const state = {
@@ -229,7 +138,7 @@
             return null;
         }
 
-        // ========== EQUALIZER UPDATE FUNCTION ==========
+        // 🔥 Update equalizer display
         function updateEqualizerDisplay() {
             songItems.forEach((item, i) => {
                 if (i === currentSongIndex && isPlaying) {
@@ -240,7 +149,84 @@
             });
         }
 
-        // ========== SONG LOADING - 🔥 ENHANCED ==========
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function toggleLike(songId) {
+            try {
+                const response = await fetch(`/api/like-song/${songId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                const data = await response.json();
+
+                if (data.status === 'liked') {
+                    likeBtn.classList.add('liked');
+                    console.log('✅ Song liked!');
+                } else if (data.status === 'unliked') {
+                    likeBtn.classList.remove('liked');
+                    console.log('💔 Song unliked!');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Error toggling like:', error);
+            }
+        }
+
+        async function checkLikeStatus(songId) {
+            try {
+                const response = await fetch('/api/liked-songs/');
+                const data = await response.json();
+                const likedSongIds = data.songs.map(s => s.id);
+                return likedSongIds.includes(songId);
+            } catch (error) {
+                console.error('Error checking like status:', error);
+                return false;
+            }
+        }
+
+        likeBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (songsData.length === 0 || !songsData[currentSongIndex]) return;
+
+            const songId = songsData[currentSongIndex].id;
+            await toggleLike(songId);
+
+            likeBtn.classList.add('beat');
+            setTimeout(() => likeBtn.classList.remove('beat'), 600);
+        });
+
+        async function trackSongPlay(songId) {
+            try {
+                const response = await fetch(`/api/track-play/${songId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                const data = await response.json();
+                console.log('✅ Song play tracked:', data);
+            } catch (error) {
+                console.error('Error tracking song play:', error);
+            }
+        }
 
         async function loadSong(index) {
             if (songsData.length === 0) return;
@@ -253,14 +239,11 @@
             trackArtist.textContent = song.artist;
             coverImage.src = song.cover;
 
-            // 🔥 NEW: Check like status for current song
             const isLiked = await checkLikeStatus(song.id);
-            if (mainLikeBtn) {
-                if (isLiked) {
-                    mainLikeBtn.classList.add('liked');
-                } else {
-                    mainLikeBtn.classList.remove('liked');
-                }
+            if (isLiked) {
+                likeBtn.classList.add('liked');
+            } else {
+                likeBtn.classList.remove('liked');
             }
 
             savePlayerState();
@@ -270,7 +253,6 @@
                 audioPlayer.removeEventListener('loadedmetadata', handler);
             }, { once: true });
 
-            // Update active song in playlist
             songItems.forEach((item, i) => {
                 if (i === index) {
                     item.classList.add('active');
@@ -280,21 +262,17 @@
                 }
             });
 
-            // Update equalizer
             updateEqualizerDisplay();
         }
-
-        // ========== PLAYBACK CONTROLS - 🔥 ENHANCED ==========
 
         function playSong() {
             audioPlayer.play();
             isPlaying = true;
-            playPauseBtn.textContent = '⏸';
+            playPauseBtn.textContent = '⌷⌷';
             albumArt.classList.add('playing');
             updateEqualizerDisplay();
             savePlayerState();
 
-            // 🔥 NEW: Track song play for recent history
             if (songsData[currentSongIndex]) {
                 trackSongPlay(songsData[currentSongIndex].id);
             }
@@ -334,8 +312,6 @@
             if (isPlaying) playSong();
         });
 
-        // ========== PROGRESS BAR / SEEKING ==========
-
         progressBar.addEventListener('click', (e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -358,8 +334,6 @@
             }, 100);
         });
 
-        // ========== PROGRESS UPDATE ==========
-
         audioPlayer.addEventListener('timeupdate', () => {
             if (isUserSeeking) return;
 
@@ -378,15 +352,11 @@
             }
         });
 
-        // ========== AUTO NEXT ==========
-
         audioPlayer.addEventListener('ended', () => {
             currentSongIndex = (currentSongIndex + 1) % songsData.length;
             loadSong(currentSongIndex);
             playSong();
         });
-
-        // ========== PLAYLIST INTERACTION ==========
 
         songItems.forEach((item) => {
             item.addEventListener('click', () => {
@@ -396,48 +366,12 @@
             });
         });
 
-
-        // ========== 🔥 NEW: LIKE BUTTON EVENT LISTENERS ==========
-
-        // Main like button click
-        if (mainLikeBtn) {
-            mainLikeBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (songsData.length === 0 || !songsData[currentSongIndex]) return;
-
-                const songId = songsData[currentSongIndex].id;
-                await toggleLike(songId);
-
-                // Animation
-                mainLikeBtn.classList.add('beat');
-                setTimeout(() => mainLikeBtn.classList.remove('beat'), 300);
-            });
-        }
-
-        // Playlist like buttons click
-        smallLikeBtns.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const songId = btn.getAttribute('data-song-id');
-                await toggleLike(songId);
-
-                // Animation
-                btn.classList.add('beat');
-                setTimeout(() => btn.classList.remove('beat'), 300);
-            });
-        });
-
-
-        // ========== HELPER FUNCTIONS ==========
-
         function formatTime(seconds) {
             if (isNaN(seconds)) return '0:00';
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
         }
-
-        // ========== INITIALIZATION - 🔥 ENHANCED ==========
 
         if (songsData.length > 0) {
             const savedState = loadPlayerState();
@@ -456,22 +390,6 @@
             } else {
                 loadSong(0);
             }
-
-            // 🔥 NEW: Load like status for all songs on page load
-            fetch('/api/liked-songs/')
-                .then(res => res.json())
-                .then(data => {
-                    const likedSongIds = data.songs.map(s => s.id);
-
-                    // Update all playlist like buttons
-                    smallLikeBtns.forEach(btn => {
-                        const songId = parseInt(btn.getAttribute('data-song-id'));
-                        if (likedSongIds.includes(songId)) {
-                            btn.classList.add('liked');
-                        }
-                    });
-                })
-                .catch(error => console.error('Error loading liked songs:', error));
         }
     </script>
 </body>

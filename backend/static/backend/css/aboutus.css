@@ -19,29 +19,36 @@ header {
     background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
     padding: 20px;
     display: flex;
+    justify-content: center;
     align-items: center;
     border-bottom: 2px solid #c8b3e6;
     box-shadow: 0 4px 20px rgba(200, 179, 230, 0.3);
 }
 
-.header-left a {
+.header-center {
+    text-align: center;
+}
+
+.header-center nav {
+    margin-top: 19px;
+}
+
+.header-center nav a {
     color: #c8b3e6;
     text-decoration: none;
-    font-weight: bold;
-    padding: 8px 15px;
-    border: 1px solid #c8b3e6;
-    border-radius: 8px;
-    transition: 0.3s;
+    padding: 10px 25px;
+    border: 2px solid #c8b3e6;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    display: inline-block;
+    font-size: 20px;
 }
 
-.header-left a:hover {
-    background: rgba(200, 179, 230, 0.2);
-    box-shadow: 0 0 15px rgba(200, 179, 230, 0.4);
-}
-
-.header-center {
-    flex: 1;
-    text-align: center;
+.header-center nav a:hover {
+    background: #c8b3e6;
+    color: #000;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(200, 179, 230, 0.4);
 }
 
 header h1 {

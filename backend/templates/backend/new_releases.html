@@ -5,8 +5,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Releases - Music Player</title>
-    <link rel="stylesheet" href="{% static 'backend/css/new_releases.css' %}">
+    <title>New Releases - Firepy</title>
+    <link rel="stylesheet" href="{% static 'backend/css/music_player.css' %}">
     <link rel="shortcut icon" href="{% static 'backend/images/firepy.jpeg' %}" type="image/x-icon">
 </head>
 
@@ -268,7 +268,7 @@
         function playSong() {
             audioPlayer.play();
             isPlaying = true;
-            playPauseBtn.textContent = '⏸';
+            playPauseBtn.textContent = '⌷⌷';
             albumArt.classList.add('playing');
             updateEqualizerDisplay();
             savePlayerState();
