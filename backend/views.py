@@ -126,7 +126,7 @@ def aboutus(request):
 
 @login_required(login_url='user_login')
 def arjit(request):
-    arjit_songs = Song.objects.filter(category='arjit').order_by('-release_date')[:12]
+    arjit_songs = Song.objects.filter(category='arjit').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -148,7 +148,7 @@ def arjit(request):
 
 @login_required(login_url='user_login')
 def bhajan(request):
-    bhajan_songs = Song.objects.filter(category='bhajan').order_by('-release_date')[:12]
+    bhajan_songs = Song.objects.filter(category='bhajan').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -170,7 +170,7 @@ def bhajan(request):
 
 @login_required(login_url='user_login')
 def drivelist(request):
-    drivelist_songs = Song.objects.filter(category='drivelist').order_by('-release_date')[:12]
+    drivelist_songs = Song.objects.filter(category='drivelist').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -192,7 +192,7 @@ def drivelist(request):
 
 @login_required(login_url='user_login')
 def honeys(request):
-    honeys_songs = Song.objects.filter(category='honeys').order_by('-release_date')[:12]
+    honeys_songs = Song.objects.filter(category='honeys').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -214,7 +214,7 @@ def honeys(request):
 
 @login_required(login_url='user_login')
 def indianhits(request):
-    indianhits_songs = Song.objects.filter(category='indianhits').order_by('-release_date')[:12]
+    indianhits_songs = Song.objects.filter(category='indianhits').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -236,7 +236,7 @@ def indianhits(request):
 
 @login_required(login_url='user_login')
 def mixlist(request):
-    mixlist_songs = Song.objects.filter(category='mixlist').order_by('-release_date')[:12]
+    mixlist_songs = Song.objects.filter(category='mixlist').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -258,7 +258,7 @@ def mixlist(request):
 
 @login_required(login_url='user_login')
 def new_releases(request):
-    new_release_songs = Song.objects.filter(category='new_releases').order_by('-release_date')[:12]
+    new_release_songs = Song.objects.filter(category='new_releases').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -280,7 +280,7 @@ def new_releases(request):
 
 @login_required(login_url='user_login')
 def phonk(request):
-    phonk_songs = Song.objects.filter(category='phonk').order_by('-release_date')[:12]
+    phonk_songs = Song.objects.filter(category='phonk').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -302,7 +302,7 @@ def phonk(request):
 
 @login_required(login_url='user_login')
 def punjabi_hits(request):
-    punjabi_hits_songs = Song.objects.filter(category='punjabi_hits').order_by('-release_date')[:12]
+    punjabi_hits_songs = Song.objects.filter(category='punjabi_hits').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -324,7 +324,7 @@ def punjabi_hits(request):
 
 @login_required(login_url='user_login')
 def subh1(request):
-    subh1_songs = Song.objects.filter(category='subh1').order_by('-release_date')[:12]
+    subh1_songs = Song.objects.filter(category='subh1').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -346,7 +346,7 @@ def subh1(request):
 
 @login_required(login_url='user_login')
 def top(request):
-    top_songs = Song.objects.filter(category='top').order_by('-release_date')[:12]
+    top_songs = Song.objects.filter(category='top').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -368,7 +368,7 @@ def top(request):
 
 @login_required(login_url='user_login')
 def topeng(request):
-    topeng_songs = Song.objects.filter(category='topeng').order_by('-release_date')[:12]
+    topeng_songs = Song.objects.filter(category='topeng').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {
@@ -390,7 +390,7 @@ def topeng(request):
 
 @login_required(login_url='user_login')
 def romantic_vibes(request):
-    romantic_vibes_songs = Song.objects.filter(category='romantic_vibes').order_by('-release_date')[:12]
+    romantic_vibes_songs = Song.objects.filter(category='romantic_vibes').order_by('created_at')[:12]
 
     songs_json = json.dumps([
         {

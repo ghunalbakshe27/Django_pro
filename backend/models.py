@@ -36,7 +36,6 @@ class Song(models.Model):
     cover_image = models.ImageField(upload_to='song_covers/', blank=True, null=True)
     audio_file = models.FileField(upload_to='songs/', blank=True, null=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    release_date = models.DateField(null=True, blank=True)
     duration = models.CharField(max_length=10, blank=True, null=True)  # e.g., "3:45"
     created_at = models.DateTimeField(auto_now_add=True)
 
